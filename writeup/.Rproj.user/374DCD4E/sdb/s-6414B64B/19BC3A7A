@@ -1,0 +1,16 @@
+{
+    "contents" : "---\ntitle: \"Practical Machine Learning - Project Writeup\"\nauthor: \"Jerold Paulson\"\ndate: \"Sunday, October 26, 2014\"\noutput: html_document\n---\nFirst we will define some functions that will be used to clean up the data\nWe will remove all columns with NAs present.\n```{r cache=TRUE}\nfilterPml       <- function(x) { read.csv(x, na.strings = c(\"\", \"NA\", \"#DIV/0!\") ) }\nremoveNAColumns     <- function(x) { x[ , colSums( is.na(x) ) < nrow(x) ] }\nonlyCompleteRows       <- function(x) {x[,sapply(x, function(y) !any(is.na(y)))] }\n```\nNow we will read in the data from the csv files already downloaded from the web\n```{r, cache=TRUE}\ntrainData      <- filterPml(\"pml-training.csv\")\ntestData       <- filterPml(\"pml-testing.csv\")\n```\nNext, we will remove columns 1,2,5 and 6 : 1,2 and 6 are not predictive variables, 5 is redundant\n``` {r,cache=TRUE}\ntraining       <- trainData[,-c(1,2,5,6)]\ntesting        <- testData[,-c(1,2,5,6)]\n```\nNow, let's partition the training set data for evaluative purposes into training and testing 70/30\n```{r,cache=TRUE}\nlibrary(caret)\ntrainIndex  <- createDataPartition(training$classe, p=.70, list=FALSE)\ntrainingSubset <- training[ trainIndex,]\ntestingSubset  <- training[-trainIndex,]\n```\nNow filter out the NA Columns / incomplete rows\n```{r,cache=TRUE}\ntrainingSubset <- onlyCompleteRows(removeNAColumns(trainingSubset))\ntestingSubset  <- onlyCompleteRows(removeNAColumns(testingSubset))\n```\nNext we do the actual training and look at the accuracy on the test subset of the practice data\n```{r, cache=TRUE}\nlibrary(randomForest)\nlibrary(e1071)\nboost <- train(classe~.,data=trainingSubset,method=\"gbm\",verbose=FALSE,trControl=trainControl(method=\"cv\",repeats=3))\n```\nLet's now look at the results of the analysis and the quality of the predictions\n``` {r}\nprint(summary(boost))\nprint(confusionMatrix(predict(boost,newdata=testingSubset[,-56]),testingSubset$classe))\n```\nThe overall accuracy, small p-value, and high sensitivity and specificity indicate that the predictive value should be very good.\n\nWe also need to consider the cross-validation issue.\nThe default setting for trainControl has 10-fold cross-validation; we are using repeats=3 as the number of complete sets of folds to compute.\n\n\nLastly, we find the actual predictions for the 20 test cases used for the assignment\n``` {r}\nanswer <- predict(boost, newdata=testData)\nprint(answer)\n```\nIt turns out that in the set of 20 test cases, the model predicted the correct class 100% of the time.",
+    "created" : 1414362177352.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4016509324",
+    "id" : "19BC3A7A",
+    "lastKnownWriteTime" : 1414362196,
+    "path" : "~/R Files/Machine Learning/Writeup/Repo2/Writeup.Rmd",
+    "project_path" : null,
+    "properties" : {
+    },
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}
